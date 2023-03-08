@@ -28,8 +28,9 @@ func FindBio(nama string, p []Person) (Person, bool) {
 }
 
 func ShowBio(bio Person) {
-	fmt.Println("ID\t: ", bio.Id)
-	fmt.Println("Nama\t: ", bio.Nama)
-	fmt.Println("Alamat\t: ", bio.Alamat)
-	fmt.Println("Alasan\t: ", bio.Alasan)
+	fmt.Println("ID\t\t: ", bio.Id)
+	fmt.Println("Nama\t\t: ", bio.Nama)
+	fmt.Println("Alamat\t\t: ", bio.Alamat)
+	fmt.Println("Pekerjaan\t: ", bio.Pekerjaan)
+	fmt.Println("Alasan\t\t: ", bio.Alasan)
 }
