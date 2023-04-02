@@ -4,7 +4,7 @@
 
 <details>
  <summary><code>POST</code> <code><b>:</b></code> <code>localhost:8080/order</code></summary>
- ```yaml
+ ```
  {
     "orderedAt": "2023-04-02T16:45:51+07:00",
     "customerName": "Willi",
@@ -34,7 +34,7 @@
 
 <details>
  <summary><code>PUT</code> <code><b>:</b></code> <code>localhost:8080/order/1</code></summary>
- ```json
+ ```
  {
     "customerName": "Serena",
     "items": [
