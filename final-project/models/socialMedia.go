@@ -8,7 +8,7 @@ import (
 type SocialMedia struct {
 	GormModel
 	Name           string `gorm:"column:name" json:"name" valid:"required~Name is required"`
-	SocialMediaURl string `gorm:"column:social_media_url" json:"social_media_url" valid:"required~Social Media URL is required"`
+	SocialMediaUrl string `gorm:"column:social_media_url" json:"social_media_url" valid:"required~Social Media URL is required"`
 	UserId         uint   `gorm:"column:user_id" json:"user_id"`
 	User           *User
 }

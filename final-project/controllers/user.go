@@ -5,9 +5,7 @@ import (
 	"final-project/helpers"
 	"final-project/models"
 	"net/http"
-	"time"
 
-	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
 )
 
@@ -84,57 +82,4 @@ func UserLogin(c *gin.Context) {
 		"token": token,
 	})
 
-}
-
-func UserUpdate(c *gin.Context) {
-	db := database.GetDB()
-	userData := c.MustGet("userData").(jwt.MapClaims)
-	userId := uint(userData["id"].(float64))
-	contentType := helpers.GetContentType(c)
-	_, _ = db, contentType
-
-	Users := models.User{}
-	if contentType == appJSON {
-		c.ShouldBindJSON(&Users)
-	} else {
-		c.ShouldBind(&Users)
-	}
-	Users.ID = userId
-
-	Result := map[string]interface{}{}
-	SqlStatement := "Update users SET username = ?, email = ?, updated_at = ? WHERE id = ? RETURNING id, email, username, age, updated_at"
-	err := db.Raw(
-		SqlStatement,
-		Users.Username, Users.Email, time.Now(), uint(userId),
-	).Scan(&Result).Error
-
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"err":     "Bad Request",
-			"message": err.Error(),
-		})
-		return
-	}
-
-	c.JSON(http.StatusCreated, Result)
-}
-
-func UserDelete(c *gin.Context) {
-	db := database.GetDB()
-	userData := c.MustGet("userData").(jwt.MapClaims)
-	userId := int(userData["id"].(float64))
-	User := models.User{}
-	err := db.Delete(User, uint(userId)).Error
-
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"err":     "Bad Request",
-			"message": err.Error(),
-		})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{
-		"message": "Your account has been successfully deleted",
-	})
 }
