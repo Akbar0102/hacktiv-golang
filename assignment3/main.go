@@ -4,96 +4,114 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"log"
 	"math/rand"
 	"net/http"
 	"time"
 )
 
-type Sensor struct {
-	Water int `json:"water"`
-	Wind  int `json:"wind"`
-}
-
 func main() {
-	// jalankan service dengan goroutine
-	loopService()
+	go autohit()
+	select {}
 }
 
-func loopService() {
-	ticker := time.NewTicker(15 * time.Second)
-	done := make(chan bool)
-
-	go sendRandomData(ticker, done)
-
-	// 1 menit berhenti
-	time.Sleep(1 * time.Minute)
-	done <- true
-	fmt.Println("stop")
-}
-
-func sendRandomData(ticker *time.Ticker, done chan bool) {
+func autohit() {
 	for {
-		select {
-		case <-done:
-			return
-		case <-ticker.C:
-			data := Sensor{
-				Water: generateNumber(),
-				Wind:  generateNumber(),
-			}
+		min := 1
+		max := 100
+		rand.Seed(time.Now().UnixNano())
+		numbrandwater := rand.Intn(max - min)
+		numbrandwind := rand.Intn(max - min)
 
-			// kirim data ke API
-			status, err := sendDataToAPI(data)
-			if err != nil {
-				fmt.Println("Failed to send data to API:", err)
-			} else {
-				fmt.Println(status)
-			}
+		jsondata := map[string]interface{}{
+			"Water": numbrandwater,
+			"Wind":  numbrandwind,
 		}
+
+		requestJson, err := json.Marshal(jsondata)
+
+		client := &http.Client{}
+		if err != nil {
+			log.Fatalln(err)
+		}
+
+		req, err := http.NewRequest("POST", "https://jsonplaceholder.typicode.com/posts", bytes.NewBuffer(requestJson))
+		req.Header.Set("Content-type", "application/json")
+
+		if err != nil {
+			log.Fatalln(err)
+		}
+
+		res, err := client.Do(req)
+
+		if err != nil {
+			log.Fatalln(err)
+		}
+
+		defer res.Body.Close()
+
+		body, err := ioutil.ReadAll(res.Body)
+
+		if err != nil {
+			log.Fatalln(err)
+		}
+
+		var responseData map[string]interface{}
+		err = json.Unmarshal(body, &responseData)
+		if err != nil {
+			log.Fatalln(err)
+		}
+
+		// hapus field "id" dari map jika ada
+		delete(responseData, "id")
+
+		// serialize kembali ke JSON
+		responseJson, err := json.Marshal(responseData)
+		if err != nil {
+			log.Fatalln(err)
+		}
+
+		// log.Println(string(body) + "\n")
+		fmt.Println(string(responseJson))
+
+		jsonprint, err := json.MarshalIndent(jsondata, "", "    ")
+		if err != nil {
+			fmt.Println("json print error")
+			return
+		}
+
+		_ = jsonprint
+		switch numbrandwater > 0 {
+		case numbrandwater <= 5:
+			result := "aman"
+			fmt.Printf("status water : %s \n", result)
+		case numbrandwater >= 6 && numbrandwater <= 8:
+			result := "siaga"
+			fmt.Printf("status water : %s \n", result)
+		case numbrandwater > 8:
+			result := "bahaya"
+			fmt.Printf("status water : %s \n", result)
+		default:
+			result := "water measurable error"
+			fmt.Println(result)
+		}
+
+		switch numbrandwind > 0 {
+		case numbrandwind <= 6:
+			result := "aman"
+			fmt.Printf("status wind : %s \n", result)
+		case numbrandwind >= 7 && numbrandwind <= 15:
+			result := "siaga"
+			fmt.Printf("status wind : %s \n", result)
+		case numbrandwind > 15:
+			result := "bahaya"
+			fmt.Printf("status wind : %s \n", result)
+		default:
+			result := "wind measurable error"
+			fmt.Println(result)
+		}
+		fmt.Printf("\n")
+		time.Sleep(time.Second * 15)
 	}
-}
-
-func sendDataToAPI(data Sensor) (string, error) {
-	jsonData, err := json.Marshal(data)
-	if err != nil {
-		fmt.Println("Error marshalling data:", err)
-		return "", err
-	}
-
-	fmt.Println(string(jsonData))
-
-	req, err := http.NewRequest("POST", "http://localhost:8081/sensor", bytes.NewBuffer(jsonData))
-	if err != nil {
-		return "", err
-	}
-
-	// set header
-	req.Header.Set("Content-Type", "application/json")
-
-	// buat client http
-	client := &http.Client{}
-
-	// kirim request
-	res, err := client.Do(req)
-	if err != nil {
-		return "", err
-	}
-	defer res.Body.Close()
-
-	respData := struct {
-		WaterStatus string `json:"water_status"`
-		WindStatus  string `json:"wind_status"`
-	}{}
-
-	err = json.NewDecoder(res.Body).Decode(&respData)
-	if err != nil {
-		return "", err
-	}
-
-	resultStatus := fmt.Sprintf("status water: %s\nstatus wind: %s\n", respData.WaterStatus, respData.WindStatus)
-	return resultStatus, nil
-}
-
-func generateNumber() int {
-	return rand.Intn(100) + 1
 }
